@@ -18,7 +18,6 @@ const TrafficLight = ({ direccion, estado, tamaño = 'mediano' }) => {
         <div className={`luz amarillo ${estado === 'amarillo' ? 'activa' : ''}`}></div>
         <div className={`luz verde ${estado === 'verde' ? 'activa' : ''}`}></div>
       </div>
-      <div className="etiqueta-direccion">{direccion.toUpperCase()}</div>
     </div>
   );
 };
