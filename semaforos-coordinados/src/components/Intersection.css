@@ -78,7 +78,6 @@
   );
 }
 
-/* Posiciones de semáforos - Mejoradas */
 .posicion-semaforo {
   position: absolute;
   z-index: 10;
@@ -88,27 +87,23 @@
 }
 
 .posicion-semaforo.norte {
-  /* Beside the northbound lane (to the right side of the vertical road) */
   top: 12px;
   left: calc(50% + 100px);
 }
 
 .posicion-semaforo.sur {
-  /* Beside the southbound lane (to the left side of the vertical road) */
   bottom: 12px;
-  left: calc(50% - 100px);
+  left: calc(50% - 120px);
 }
 
 .posicion-semaforo.este {
-  /* Beside the eastbound lane (above the horizontal road) */
   right: 12px;
-  top: calc(50% - 100px);
+  top: calc(50% - 40px);
 }
 
 .posicion-semaforo.oeste {
-  /* Beside the westbound lane (below the horizontal road) */
   left: 12px;
-  top: calc(50% + 100px);
+  top: calc(50% + 60px);
 }
 
 /* Centro de la intersección */

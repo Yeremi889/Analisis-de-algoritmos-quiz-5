@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TrafficLight from './TrafficLight';
 import './Intersection.css';
 
@@ -37,6 +37,22 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
 
   const infoFase = getInfoFase();
 
+  // Posiciones editables (px) para cada semáforo: { left, top }
+  const [posiciones, setPosiciones] = useState({
+    // Valores fijados según la imagen adjunta
+    norte: { left: 460, top: 12 },
+    este: { left: 658, top: 461 },
+    sur: { left: 215, top: 608 },
+    oeste: { left: 9, top: 155 }
+  });
+
+  const updatePos = (dir, axis, value) => {
+    setPosiciones(prev => ({
+      ...prev,
+      [dir]: { ...prev[dir], [axis]: Number(value) }
+    }));
+  };
+
   return (
     <div className="interseccion-container">
       <div className="interseccion">
@@ -45,7 +61,7 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
         <div className="calle vertical"></div>
         
         {/* Semáforos */}
-        <div className="posicion-semaforo norte">
+        <div className="posicion-semaforo norte" style={{ left: posiciones.norte.left + 'px', top: posiciones.norte.top + 'px' }}>
           <TrafficLight 
             direccion="norte" 
             estado={estadoSemaforos.norte}
@@ -53,7 +69,7 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
           />
         </div>
         
-        <div className="posicion-semaforo sur">
+        <div className="posicion-semaforo sur" style={{ left: posiciones.sur.left + 'px', top: posiciones.sur.top + 'px' }}>
           <TrafficLight 
             direccion="sur" 
             estado={estadoSemaforos.sur}
@@ -61,7 +77,7 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
           />
         </div>
         
-        <div className="posicion-semaforo este">
+        <div className="posicion-semaforo este" style={{ left: posiciones.este.left + 'px', top: posiciones.este.top + 'px' }}>
           <TrafficLight 
             direccion="este" 
             estado={estadoSemaforos.este}
@@ -69,7 +85,7 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
           />
         </div>
         
-        <div className="posicion-semaforo oeste">
+        <div className="posicion-semaforo oeste" style={{ left: posiciones.oeste.left + 'px', top: posiciones.oeste.top + 'px' }}>
           <TrafficLight 
             direccion="oeste" 
             estado={estadoSemaforos.oeste}

@@ -1,76 +1,59 @@
-// Este es el Worker que manejará la lógica de cada semáforo en paralelo
-let intervalId = null;
-let currentState = 'rojo';
-let tiempoVerde = 10;
-let tiempoAmarillo = 3;
-let tiempoRojo = 2;
+/**
+ * Web Worker independiente para gestionar un semáforo.
+ * 
+ * Cada worker maneja el ciclo de su semáforo de forma independiente
+ * y responde a comandos del controlador central (App.jsx).
+ * 
+ * Protocolo de mensajes:
+ * - Main -> Worker: { type: 'start', state: 'verde'|'amarillo'|'rojo', duration: ms }
+ * - Worker -> Main: { type: 'stateChange', state: 'verde'|'amarillo'|'rojo', timestamp }
+ * - Worker -> Main: { type: 'phaseDone', timestamp }
+ */
 
-self.onmessage = function(e) {
-  const { action, data } = e.data;
-  
-  switch(action) {
-    case 'INICIAR':
-      if (intervalId) clearInterval(intervalId);
-      currentState = data.estadoInicial;
-      tiempoVerde = data.tiempos.verde;
-      tiempoAmarillo = data.tiempos.amarillo;
-      tiempoRojo = data.tiempos.rojo;
-      
-      // Iniciar ciclo
-      ejecutarCiclo();
-      break;
-      
-    case 'DETENER':
-      if (intervalId) clearInterval(intervalId);
-      intervalId = null;
-      break;
-      
-    case 'ACTUALIZAR_TIEMPOS':
-      tiempoVerde = data.verde;
-      tiempoAmarillo = data.amarillo;
-      tiempoRojo = data.rojo;
-      break;
-      
-    case 'CAMBIAR_ESTADO':
-      currentState = data;
-      self.postMessage({ type: 'ESTADO_CAMBIADO', estado: currentState });
-      break;
+let currentState = 'rojo';
+let currentTimeout = null;
+
+/**
+ * Recibe comandos del controlador central para cambiar estado del semáforo.
+ */
+self.onmessage = (event) => {
+  const { type, state, duration } = event.data;
+
+  // Limpiar timeout previo si existe
+  if (currentTimeout !== null) {
+    clearTimeout(currentTimeout);
+    currentTimeout = null;
+  }
+
+  if (type === 'start') {
+    // Cambiar estado inmediatamente
+    currentState = state;
+    
+    // Notificar al main el cambio de estado
+    self.postMessage({
+      type: 'stateChange',
+      state: currentState,
+      timestamp: Date.now()
+    });
+
+    // Programar siguiente cambio si duration > 0
+    if (duration > 0) {
+      currentTimeout = setTimeout(() => {
+        // Señal de que este estado terminó (usado para coordinación)
+        self.postMessage({
+          type: 'phaseDone',
+          timestamp: Date.now()
+        });
+      }, duration);
+    }
+  }
+
+  if (type === 'stop') {
+    // Detener el worker (limpieza)
+    if (currentTimeout !== null) {
+      clearTimeout(currentTimeout);
+      currentTimeout = null;
+    }
+    currentState = 'rojo';
   }
 };
-
-function ejecutarCiclo() {
-  intervalId = setInterval(() => {
-    // Lógica de cambio de estado
-    let siguienteEstado;
-    let tiempoEspera;
-    
-    switch(currentState) {
-      case 'verde':
-        siguienteEstado = 'amarillo';
-        tiempoEspera = tiempoVerde * 1000;
-        break;
-      case 'amarillo':
-        siguienteEstado = 'rojo';
-        tiempoEspera = tiempoAmarillo * 1000;
-        break;
-      case 'rojo':
-        siguienteEstado = 'verde';
-        tiempoEspera = tiempoRojo * 1000;
-        break;
-      default:
-        siguienteEstado = 'rojo';
-        tiempoEspera = 1000;
-    }
-    
-    // Esperar y cambiar estado
-    setTimeout(() => {
-      currentState = siguienteEstado;
-      self.postMessage({ 
-        type: 'ESTADO_CAMBIADO', 
-        estado: currentState,
-        timestamp: Date.now()
-      });
-    }, tiempoEspera);
-    
-  }, 100); // Revisar cada 100ms
-}

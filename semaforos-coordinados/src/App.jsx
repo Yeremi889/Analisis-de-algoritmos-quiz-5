@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import Intersection from './components/Intersection';
 import './App.css';
 
+/**
+ * ARQUITECTURA CON COMPUTACIÓN PARALELA:
+ * 
+ * - 4 Web Workers independientes (norte, este, sur, oeste)
+ * - Controlador central en el thread principal que coordina
+ * - Comunicación asincrónica via postMessage/onmessage
+ * - Garantiza sincronización: solo 1 semáforo en verde a la vez
+ */
+
 function App() {
   // Estados
   const [estadoSemaforos, setEstadoSemaforos] = useState({
@@ -13,15 +22,14 @@ function App() {
 
   const [tiempos, setTiempos] = useState({
     verde: 10,
-    amarillo: 3,
-    rojo: 2
+    amarillo: 3
   });
 
   const [sistemaActivo, setSistemaActivo] = useState(true);
   const [faseActual, setFaseActual] = useState(0);
   const [tiempoRestante, setTiempoRestante] = useState(10);
   
-  // Referencias para los Workers
+  // Referencias para los Web Workers
   const workersRef = useRef({});
   const timerRef = useRef(null);
 
@@ -45,19 +53,47 @@ function App() {
     { norte: 'amarillo', sur: 'rojo', este: 'rojo', oeste: 'amarillo' }
   ];
 
-  // Inicializar Workers - DESHABILITADO: Usando lógica central sincronizada
+  // Inicializar Web Workers - cada uno manejará un semáforo independientemente
   useEffect(() => {
-    // Los semáforos se controlan desde el controlador central
-    // para garantizar sincronización perfecta
+    const directions = ['norte', 'este', 'sur', 'oeste'];
+    
+    // Crear un Worker por dirección
+    directions.forEach((dir) => {
+      const workerUrl = new URL('./workers/trafficWorker.js', import.meta.url);
+      const worker = new Worker(workerUrl, { type: 'module' });
+      
+      // Manejador de mensajes del worker
+      worker.onmessage = (event) => {
+        const { type, state } = event.data;
+        
+        if (type === 'stateChange') {
+          // Actualizar estado del semáforo desde el worker
+          setEstadoSemaforos(prev => ({
+            ...prev,
+            [dir]: state
+          }));
+        }
+        
+        if (type === 'phaseDone') {
+          // El worker señala que su fase terminó
+          // (se usa para coordinación si es necesario)
+        }
+      };
+      
+      workersRef.current[dir] = worker;
+    });
+
     return () => {
-      // Limpiar si hay workers
-      Object.values(workersRef.current).forEach(worker => {
-        if (worker) worker.terminate();
+      // Limpiar workers al desmontar
+      directions.forEach((dir) => {
+        if (workersRef.current[dir]) {
+          workersRef.current[dir].terminate();
+        }
       });
     };
   }, []);
 
-  // Controlador central que coordina las fases
+  // Controlador central que coordina las fases y comunica via Workers
   useEffect(() => {
     if (!sistemaActivo) {
       if (timerRef.current) {
@@ -76,14 +112,25 @@ function App() {
       // Fases impares (1, 3, 5, 7): Amarillo - duración corta
       let duracionFase;
       if (indiceFase % 2 === 0) {
-        // Fase con verde
         duracionFase = tiempos.verde;
       } else {
-        // Fase de transición con amarillo
         duracionFase = tiempos.amarillo;
       }
       
-      // Contador regresivo
+      // Enviar comandos a cada Worker para que ejecute su estado
+      const directions = ['norte', 'este', 'sur', 'oeste'];
+      directions.forEach((dir) => {
+        const worker = workersRef.current[dir];
+        if (worker) {
+          worker.postMessage({
+            type: 'start',
+            state: fase[dir],
+            duration: duracionFase * 1000
+          });
+        }
+      });
+      
+      // Contador regresivo visual
       let contador = duracionFase;
       setTiempoRestante(contador);
       
