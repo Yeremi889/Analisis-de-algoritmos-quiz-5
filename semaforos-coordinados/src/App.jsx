@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import Intersection from './components/Intersection';
-import ControlPanel from './components/ControlPanel';
 import './App.css';
 
 function App() {
@@ -26,52 +25,32 @@ function App() {
   const workersRef = useRef({});
   const timerRef = useRef(null);
 
-  // Secuencia de fases
+  // Secuencia de fases - Orden: NORTE -> ESTE -> SUR -> OESTE (Solo 1 verde a la vez)
   const fases = [
-    // Fase 1: Este-Oeste verde, Norte-Sur rojo
-    { norte: 'rojo', sur: 'rojo', este: 'verde', oeste: 'verde' },
-    // Fase 2: Este-Oeste amarillo, Norte-Sur rojo
-    { norte: 'rojo', sur: 'rojo', este: 'amarillo', oeste: 'amarillo' },
-    // Fase 3: Norte-Sur verde, Este-Oeste rojo
-    { norte: 'verde', sur: 'verde', este: 'rojo', oeste: 'rojo' },
-    // Fase 4: Norte-Sur amarillo, Este-Oeste rojo
-    { norte: 'amarillo', sur: 'amarillo', este: 'rojo', oeste: 'rojo' }
+    // Fase 0: NORTE verde, otros rojo
+    { norte: 'verde', sur: 'rojo', este: 'rojo', oeste: 'rojo' },
+    // Fase 1: NORTE amarillo, ESTE amarillo (preparando cambio)
+    { norte: 'amarillo', sur: 'rojo', este: 'amarillo', oeste: 'rojo' },
+    // Fase 2: ESTE verde, otros rojo
+    { norte: 'rojo', sur: 'rojo', este: 'verde', oeste: 'rojo' },
+    // Fase 3: ESTE amarillo, SUR amarillo (preparando cambio)
+    { norte: 'rojo', sur: 'amarillo', este: 'amarillo', oeste: 'rojo' },
+    // Fase 4: SUR verde, otros rojo
+    { norte: 'rojo', sur: 'verde', este: 'rojo', oeste: 'rojo' },
+    // Fase 5: SUR amarillo, OESTE amarillo (preparando cambio)
+    { norte: 'rojo', sur: 'amarillo', este: 'rojo', oeste: 'amarillo' },
+    // Fase 6: OESTE verde, otros rojo
+    { norte: 'rojo', sur: 'rojo', este: 'rojo', oeste: 'verde' },
+    // Fase 7: OESTE amarillo, NORTE amarillo (preparando cambio)
+    { norte: 'amarillo', sur: 'rojo', este: 'rojo', oeste: 'amarillo' }
   ];
 
-  // Inicializar Workers
+  // Inicializar Workers - DESHABILITADO: Usando lógica central sincronizada
   useEffect(() => {
-    // Crear Workers para cada dirección
-    const direcciones = ['norte', 'sur', 'este', 'oeste'];
-    
-    direcciones.forEach(dir => {
-      try {
-        const worker = new Worker(new URL('./workers/trafficWorker.js', import.meta.url));
-        workersRef.current[dir] = worker;
-        
-        worker.onmessage = (e) => {
-          if (e.data.type === 'ESTADO_CAMBIADO') {
-            setEstadoSemaforos(prev => ({
-              ...prev,
-              [dir]: e.data.estado
-            }));
-          }
-        };
-        
-        // Iniciar worker
-        worker.postMessage({
-          action: 'INICIAR',
-          data: {
-            estadoInicial: estadoSemaforos[dir],
-            tiempos: tiempos
-          }
-        });
-      } catch (error) {
-        console.error(`Error creando worker para ${dir}:`, error);
-      }
-    });
-
+    // Los semáforos se controlan desde el controlador central
+    // para garantizar sincronización perfecta
     return () => {
-      // Limpiar Workers
+      // Limpiar si hay workers
       Object.values(workersRef.current).forEach(worker => {
         if (worker) worker.terminate();
       });
@@ -92,14 +71,17 @@ function App() {
       setEstadoSemaforos(fase);
       setFaseActual(indiceFase);
       
-      // Calcular duración de la fase
-      const tieneVerde = Object.values(fase).includes('verde');
-      const tieneAmarillo = Object.values(fase).includes('amarillo');
-      
+      // Determinar duración según tipo de fase
+      // Fases pares (0, 2, 4, 6): Verde - duración completa
+      // Fases impares (1, 3, 5, 7): Amarillo - duración corta
       let duracionFase;
-      if (tieneVerde) duracionFase = tiempos.verde;
-      else if (tieneAmarillo) duracionFase = tiempos.amarillo;
-      else duracionFase = tiempos.rojo;
+      if (indiceFase % 2 === 0) {
+        // Fase con verde
+        duracionFase = tiempos.verde;
+      } else {
+        // Fase de transición con amarillo
+        duracionFase = tiempos.amarillo;
+      }
       
       // Contador regresivo
       let contador = duracionFase;
@@ -130,110 +112,37 @@ function App() {
     };
   }, [sistemaActivo, tiempos, faseActual]);
 
-  // Manejar cambio de tiempos
-  const handleCambiarTiempo = (color, valor) => {
-    const nuevoValor = parseInt(valor);
-    if (nuevoValor < 1) return;
-    
+  // Manejar cambios simples de velocidad (reduce o aumenta duraciones)
+  const aumentarVelocidad = () => {
     setTiempos(prev => ({
-      ...prev,
-      [color]: nuevoValor
+      verde: Math.max(1, prev.verde - 1),
+      amarillo: Math.max(1, prev.amarillo - 1),
+      rojo: prev.rojo
     }));
-    
-    // Actualizar Workers
-    Object.values(workersRef.current).forEach(worker => {
-      if (worker) {
-        worker.postMessage({
-          action: 'ACTUALIZAR_TIEMPOS',
-          data: {
-            verde: color === 'verde' ? nuevoValor : tiempos.verde,
-            amarillo: color === 'amarillo' ? nuevoValor : tiempos.amarillo,
-            rojo: color === 'rojo' ? nuevoValor : tiempos.rojo
-          }
-        });
-      }
-    });
   };
 
-  // Toggle sistema
-  const toggleSistema = () => {
-    const nuevoEstado = !sistemaActivo;
-    setSistemaActivo(nuevoEstado);
-    
-    Object.values(workersRef.current).forEach(worker => {
-      if (worker) {
-        worker.postMessage({
-          action: nuevoEstado ? 'INICIAR' : 'DETENER',
-          data: nuevoEstado ? {
-            estadoInicial: estadoSemaforos,
-            tiempos: tiempos
-          } : null
-        });
-      }
-    });
+  const disminuirVelocidad = () => {
+    setTiempos(prev => ({
+      verde: Math.min(30, prev.verde + 1),
+      amarillo: Math.min(10, prev.amarillo + 1),
+      rojo: prev.rojo
+    }));
   };
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>🚦 Sistema de Semáforos Coordinados</h1>
-        <p className="subtitulo">Programación Paralela con Web Workers</p>
-      </header>
+      <div className="speed-control" role="region" aria-label="Control de velocidad">
+        <button className="speed-btn" onClick={aumentarVelocidad}>⏩</button>
+        <div className="speed-label">Vel: {tiempos.verde}s / {tiempos.amarillo}s</div>
+        <button className="speed-btn" onClick={disminuirVelocidad}>⏪</button>
+      </div>
 
       <main className="main-content">
-        {/* Visualización del cruce */}
-        <div className="seccion-visualizacion">
-          <h2>📊 Vista del Cruce</h2>
-          <Intersection 
-            estadoSemaforos={estadoSemaforos}
-            faseActual={faseActual}
-          />
-        </div>
-
-        {/* Panel de control */}
-        <div className="seccion-control">
-          <ControlPanel
-            sistemaActivo={sistemaActivo}
-            onToggle={toggleSistema}
-            tiempos={tiempos}
-            onCambiarTiempo={handleCambiarTiempo}
-            faseActual={faseActual}
-            tiempoRestante={tiempoRestante}
-          />
-        </div>
-
-        {/* Información técnica */}
-        <div className="info-tecnica">
-          <h3>🔧 Características Implementadas</h3>
-          <div className="caracteristicas-grid">
-            <div className="caracteristica">
-              <div className="icono">⚡</div>
-              <h4>Programación Paralela</h4>
-              <p>Web Workers ejecutan cada semáforo en hilos separados</p>
-            </div>
-            <div className="caracteristica">
-              <div className="icono">🎯</div>
-              <h4>Coordinación Central</h4>
-              <p>Controlador asegura que nunca haya dos verdes opuestos</p>
-            </div>
-            <div className="caracteristica">
-              <div className="icono">🔄</div>
-              <h4>Tiempo Real</h4>
-              <p>Actualización dinámica con contador regresivo</p>
-            </div>
-            <div className="caracteristica">
-              <div className="icono">🎨</div>
-              <h4>Interfaz Visual</h4>
-              <p>Representación gráfica del cruce con animaciones</p>
-            </div>
-          </div>
-        </div>
+        <Intersection
+          estadoSemaforos={estadoSemaforos}
+          faseActual={faseActual}
+        />
       </main>
-
-      <footer className="footer">
-        <p>Sistema de Control de Tráfico - Computación Paralela</p>
-        <p className="nota">Usando React Hooks, Web Workers y CSS Animations</p>
-      </footer>
     </div>
   );
 }

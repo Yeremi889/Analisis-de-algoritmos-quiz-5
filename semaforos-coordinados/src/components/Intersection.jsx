@@ -1,15 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import TrafficLight from './TrafficLight';
 import './Intersection.css';
 
 const Intersection = ({ estadoSemaforos, faseActual }) => {
-  // Información de la fase actual
+  const [carsMoving, setCarsMoving] = useState({
+    norte: false,
+    sur: false,
+    este: false,
+    oeste: false
+  });
+
+  // Actualizar movimiento de vehículos según el estado del semáforo
+  useEffect(() => {
+    setCarsMoving({
+      norte: estadoSemaforos.norte === 'verde',
+      sur: estadoSemaforos.sur === 'verde',
+      este: estadoSemaforos.este === 'verde',
+      oeste: estadoSemaforos.oeste === 'verde'
+    });
+  }, [estadoSemaforos]);
+
+  // Información de la fase actual - Rotación: Norte -> Este -> Sur -> Oeste
   const getInfoFase = () => {
     const fases = [
-      { desc: "🚗 Este-Oeste: VERDE | Norte-Sur: ROJO", activo: "este-oeste" },
-      { desc: "⚠ Este-Oeste: AMARILLO | Norte-Sur: ROJO", activo: "este-oeste-amarillo" },
-      { desc: "🚗 Norte-Sur: VERDE | Este-Oeste: ROJO", activo: "norte-sur" },
-      { desc: "⚠ Norte-Sur: AMARILLO | Este-Oeste: ROJO", activo: "norte-sur-amarillo" },
+      { desc: "🚗 NORTE: VERDE", activo: "Norte Activo", direccion: "NORTE" },
+      { desc: "⚠ Transición: NORTE → ESTE", activo: "Transición...", direccion: "TRANSICIÓN" },
+      { desc: "🚗 ESTE: VERDE", activo: "Este Activo", direccion: "ESTE" },
+      { desc: "⚠ Transición: ESTE → SUR", activo: "Transición...", direccion: "TRANSICIÓN" },
+      { desc: "🚗 SUR: VERDE", activo: "Sur Activo", direccion: "SUR" },
+      { desc: "⚠ Transición: SUR → OESTE", activo: "Transición...", direccion: "TRANSICIÓN" },
+      { desc: "🚗 OESTE: VERDE", activo: "Oeste Activo", direccion: "OESTE" },
+      { desc: "⚠ Transición: OESTE → NORTE", activo: "Transición...", direccion: "TRANSICIÓN" },
     ];
     return fases[faseActual] || fases[0];
   };
@@ -56,19 +77,25 @@ const Intersection = ({ estadoSemaforos, faseActual }) => {
           />
         </div>
         
-        {/* Centro del cruce */}
-        <div className="centro-interseccion">
-          <div className="indicador-fase">
-            <div className="fase-activa">{infoFase.activo}</div>
-            <div className="descripcion-fase">{infoFase.desc}</div>
-          </div>
-        </div>
+        {/* Centro del cruce - indicador removido (señales visibles por color) */}
+        <div className="centro-interseccion"></div>
         
-        {/* Vehículos animados */}
-        <div className="vehiculo vehiculo-este"></div>
-        <div className="vehiculo vehiculo-oeste"></div>
-        <div className="vehiculo vehiculo-norte"></div>
-        <div className="vehiculo vehiculo-sur"></div>
+        {/* UN SOLO Vehículo por dirección - solo se mueve cuando semáforo está verde */}
+        {carsMoving.norte && (
+          <div className="vehiculo vehiculo-norte vehiculo-unico"></div>
+        )}
+        
+        {carsMoving.este && (
+          <div className="vehiculo vehiculo-este vehiculo-unico"></div>
+        )}
+        
+        {carsMoving.sur && (
+          <div className="vehiculo vehiculo-sur vehiculo-unico"></div>
+        )}
+        
+        {carsMoving.oeste && (
+          <div className="vehiculo vehiculo-oeste vehiculo-unico"></div>
+        )}
       </div>
     </div>
   );

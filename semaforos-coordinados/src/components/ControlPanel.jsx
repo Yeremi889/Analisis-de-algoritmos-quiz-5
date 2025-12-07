@@ -24,14 +24,14 @@ const ControlPanel = ({
         
         {/* Configuración de tiempos */}
         <div className="config-tiempos">
-          <h4>Tiempos de Semáforo (segundos):</h4>
+          <h4>⏱️ Tiempos del Sistema (segundos):</h4>
           
           <div className="control-tiempo">
             <label>🟢 Verde:</label>
             <input 
               type="range" 
-              min="5" 
-              max="20" 
+              min="3" 
+              max="15" 
               value={tiempos.verde}
               onChange={(e) => onCambiarTiempo('verde', e.target.value)}
               disabled={!sistemaActivo}
@@ -43,8 +43,8 @@ const ControlPanel = ({
             <label>🟡 Amarillo:</label>
             <input 
               type="range" 
-              min="2" 
-              max="5" 
+              min="1" 
+              max="3" 
               value={tiempos.amarillo}
               onChange={(e) => onCambiarTiempo('amarillo', e.target.value)}
               disabled={!sistemaActivo}
@@ -69,25 +69,40 @@ const ControlPanel = ({
         {/* Información del sistema */}
         <div className="info-sistema">
           <div className="estado-item">
-            <span className="etiqueta">Estado:</span>
+            <span className="etiqueta">🟢 Estado:</span>
             <span className={`valor ${sistemaActivo ? 'sistema-activo' : 'sistema-inactivo'}`}>
-              {sistemaActivo ? '🟢 ACTIVO' : '⏸️ PAUSADO'}
+              {sistemaActivo ? 'ACTIVO' : 'PAUSADO'}
             </span>
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">Fase Actual:</span>
-            <span className="valor">Fase {faseActual + 1}</span>
+            <span className="etiqueta">🚦 Fase:</span>
+            <span className="valor">{faseActual + 1} de 8</span>
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">Tiempo Restante:</span>
+            <span className="etiqueta">⏱️ Tiempo:</span>
             <span className="valor">{tiempoRestante}s</span>
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">Ciclo Completo:</span>
-            <span className="valor">{tiempos.verde + tiempos.amarillo + tiempos.rojo}s</span>
+            <span className="etiqueta">🔄 Ciclo:</span>
+            <span className="valor">{(tiempos.verde + tiempos.amarillo) * 4}s</span>
+          </div>
+          
+          <hr className="divisor" />
+          
+          <div className="rotacion-info">
+            <p className="titulo-rotacion">📍 Orden de Rotación:</p>
+            <div className="orden-fases">
+              <div className={`fase-item ${faseActual === 0 || faseActual === 1 ? 'activo' : ''}`}>NORTE</div>
+              <span className="flecha">→</span>
+              <div className={`fase-item ${faseActual === 2 || faseActual === 3 ? 'activo' : ''}`}>ESTE</div>
+              <span className="flecha">→</span>
+              <div className={`fase-item ${faseActual === 4 || faseActual === 5 ? 'activo' : ''}`}>SUR</div>
+              <span className="flecha">→</span>
+              <div className={`fase-item ${faseActual === 6 || faseActual === 7 ? 'activo' : ''}`}>OESTE</div>
+            </div>
           </div>
         </div>
       </div>

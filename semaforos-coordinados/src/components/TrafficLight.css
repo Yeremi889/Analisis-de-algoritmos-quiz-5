@@ -3,80 +3,119 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 8px;
 }
 
 .caja-semaforo {
-  background: #1e293b;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-  border: 2px solid #334155;
+  background: linear-gradient(135deg, #0a1420, #1a2430);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 
+    inset 0 0 15px rgba(0, 0, 0, 0.8),
+    0 5px 20px rgba(0, 0, 0, 0.5);
+  border: 3px solid #2a3a4a;
 }
 
 .luz {
-  width: 35px;
-  height: 35px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  margin: 8px 0;
-  opacity: 0.3;
+  margin: 10px 0;
+  opacity: 0.25;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 .luz::after {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.luz.rojo { background: #ff6b6b; }
-.luz.amarillo { background: #ffd93d; }
-.luz.verde { background: #6bcf7f; }
+.luz.rojo { 
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+}
+
+.luz.amarillo { 
+  background: linear-gradient(135deg, #ffd93d, #ffb81c);
+}
+
+.luz.verde { 
+  background: linear-gradient(135deg, #6bcf7f, #4caf50);
+}
 
 .luz.activa {
   opacity: 1;
   box-shadow: 
-    0 0 20px currentColor,
-    inset 0 0 10px rgba(255, 255, 255, 0.2);
+    0 0 25px currentColor,
+    inset 0 0 10px rgba(255, 255, 255, 0.3),
+    inset 0 0 5px rgba(0, 0, 0, 0.5);
+  animation: pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 25px currentColor,
+      inset 0 0 10px rgba(255, 255, 255, 0.3),
+      inset 0 0 5px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 
+      0 0 35px currentColor,
+      inset 0 0 10px rgba(255, 255, 255, 0.5),
+      inset 0 0 5px rgba(0, 0, 0, 0.5);
+  }
 }
 
 .etiqueta-direccion {
-  margin-top: 10px;
+  margin-top: 5px;
   font-weight: bold;
   color: #64ffda;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Tamaños diferentes */
 .semaforo-pequeño .luz {
-  width: 25px;
-  height: 25px;
-  margin: 5px 0;
+  width: 28px;
+  height: 28px;
+  margin: 6px 0;
 }
 
 .semaforo-pequeño .caja-semaforo {
-  padding: 10px;
+  padding: 12px;
 }
 
 .semaforo-pequeño .etiqueta-direccion {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .semaforo-mediano .luz {
-  width: 35px;
-  height: 35px;
-  margin: 8px 0;
+  width: 40px;
+  height: 40px;
+  margin: 10px 0;
 }
 
 .semaforo-grande .luz {
-  width: 50px;
-  height: 50px;
-  margin: 10px 0;
+  width: 55px;
+  height: 55px;
+  margin: 12px 0;
+}
+
+.semaforo-grande .caja-semaforo {
+  padding: 20px;
+}
+
+.semaforo-grande .etiqueta-direccion {
+  font-size: 1rem;
 }
