@@ -11,20 +11,19 @@ const ControlPanel = ({
 }) => {
   return (
     <div className="panel-control">
-      <h3>⚙️ Panel de Control</h3>
+      <h3> Panel de Control</h3>
       
       <div className="controles">
-        {/* Botón principal */}
         <button 
           className={`boton-control ${sistemaActivo ? 'activo' : 'inactivo'}`}
           onClick={onToggle}
         >
-          {sistemaActivo ? '⏸️ PAUSAR' : '▶️ INICIAR'}
+          {sistemaActivo ? 'PAUSAR' : ' INICIAR'}
         </button>
         
         {/* Configuración de tiempos */}
         <div className="config-tiempos">
-          <h4>⏱️ Tiempos del Sistema (segundos):</h4>
+          <h4> Tiempos del Sistema (segundos):</h4>
           
           <div className="control-tiempo">
             <label>🟢 Verde:</label>
@@ -76,24 +75,24 @@ const ControlPanel = ({
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">🚦 Fase:</span>
+            <span className="etiqueta"> Fase:</span>
             <span className="valor">{faseActual + 1} de 8</span>
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">⏱️ Tiempo:</span>
+            <span className="etiqueta"> Tiempo:</span>
             <span className="valor">{tiempoRestante}s</span>
           </div>
           
           <div className="estado-item">
-            <span className="etiqueta">🔄 Ciclo:</span>
+            <span className="etiqueta"> Ciclo:</span>
             <span className="valor">{(tiempos.verde + tiempos.amarillo) * 4}s</span>
           </div>
           
           <hr className="divisor" />
           
           <div className="rotacion-info">
-            <p className="titulo-rotacion">📍 Orden de Rotación:</p>
+            <p className="titulo-rotacion"> Orden de Rotación:</p>
             <div className="orden-fases">
               <div className={`fase-item ${faseActual === 0 || faseActual === 1 ? 'activo' : ''}`}>NORTE</div>
               <span className="flecha">→</span>

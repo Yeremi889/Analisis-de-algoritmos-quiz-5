@@ -2,16 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import Intersection from './components/Intersection';
 import './App.css';
 
-/**
- * ARQUITECTURA CON COMPUTACIÓN PARALELA:
- * 
- * - 4 Web Workers independientes (norte, este, sur, oeste)
- * - Controlador central en el thread principal que coordina
- * - Comunicación asincrónica via postMessage/onmessage
- * - Garantiza sincronización: solo 1 semáforo en verde a la vez
- */
-
 function App() {
+
   // Estados
   const [estadoSemaforos, setEstadoSemaforos] = useState({
     norte: 'rojo',
@@ -33,41 +25,29 @@ function App() {
   const workersRef = useRef({});
   const timerRef = useRef(null);
 
-  // Secuencia de fases - Orden: NORTE -> ESTE -> SUR -> OESTE (Solo 1 verde a la vez)
+  // Secuencia de fases
   const fases = [
-    // Fase 0: NORTE verde, otros rojo
     { norte: 'verde', sur: 'rojo', este: 'rojo', oeste: 'rojo' },
-    // Fase 1: NORTE amarillo, ESTE amarillo (preparando cambio)
     { norte: 'amarillo', sur: 'rojo', este: 'amarillo', oeste: 'rojo' },
-    // Fase 2: ESTE verde, otros rojo
     { norte: 'rojo', sur: 'rojo', este: 'verde', oeste: 'rojo' },
-    // Fase 3: ESTE amarillo, SUR amarillo (preparando cambio)
     { norte: 'rojo', sur: 'amarillo', este: 'amarillo', oeste: 'rojo' },
-    // Fase 4: SUR verde, otros rojo
     { norte: 'rojo', sur: 'verde', este: 'rojo', oeste: 'rojo' },
-    // Fase 5: SUR amarillo, OESTE amarillo (preparando cambio)
     { norte: 'rojo', sur: 'amarillo', este: 'rojo', oeste: 'amarillo' },
-    // Fase 6: OESTE verde, otros rojo
     { norte: 'rojo', sur: 'rojo', este: 'rojo', oeste: 'verde' },
-    // Fase 7: OESTE amarillo, NORTE amarillo (preparando cambio)
     { norte: 'amarillo', sur: 'rojo', este: 'rojo', oeste: 'amarillo' }
   ];
 
-  // Inicializar Web Workers - cada uno manejará un semáforo independientemente
   useEffect(() => {
     const directions = ['norte', 'este', 'sur', 'oeste'];
     
-    // Crear un Worker por dirección
     directions.forEach((dir) => {
       const workerUrl = new URL('./workers/trafficWorker.js', import.meta.url);
       const worker = new Worker(workerUrl, { type: 'module' });
       
-      // Manejador de mensajes del worker
       worker.onmessage = (event) => {
         const { type, state } = event.data;
         
         if (type === 'stateChange') {
-          // Actualizar estado del semáforo desde el worker
           setEstadoSemaforos(prev => ({
             ...prev,
             [dir]: state
@@ -75,8 +55,6 @@ function App() {
         }
         
         if (type === 'phaseDone') {
-          // El worker señala que su fase terminó
-          // (se usa para coordinación si es necesario)
         }
       };
       
@@ -84,7 +62,6 @@ function App() {
     });
 
     return () => {
-      // Limpiar workers al desmontar
       directions.forEach((dir) => {
         if (workersRef.current[dir]) {
           workersRef.current[dir].terminate();
@@ -93,7 +70,6 @@ function App() {
     };
   }, []);
 
-  // Controlador central que coordina las fases y comunica via Workers
   useEffect(() => {
     if (!sistemaActivo) {
       if (timerRef.current) {
@@ -107,9 +83,6 @@ function App() {
       setEstadoSemaforos(fase);
       setFaseActual(indiceFase);
       
-      // Determinar duración según tipo de fase
-      // Fases pares (0, 2, 4, 6): Verde - duración completa
-      // Fases impares (1, 3, 5, 7): Amarillo - duración corta
       let duracionFase;
       if (indiceFase % 2 === 0) {
         duracionFase = tiempos.verde;
@@ -117,7 +90,6 @@ function App() {
         duracionFase = tiempos.amarillo;
       }
       
-      // Enviar comandos a cada Worker para que ejecute su estado
       const directions = ['norte', 'este', 'sur', 'oeste'];
       directions.forEach((dir) => {
         const worker = workersRef.current[dir];
@@ -130,7 +102,6 @@ function App() {
         }
       });
       
-      // Contador regresivo visual
       let contador = duracionFase;
       setTiempoRestante(contador);
       
@@ -143,7 +114,6 @@ function App() {
         }
       }, 1000);
       
-      // Programar siguiente fase
       timerRef.current = setTimeout(() => {
         const siguienteFase = (indiceFase + 1) % fases.length;
         ejecutarFase(siguienteFase);
@@ -159,7 +129,7 @@ function App() {
     };
   }, [sistemaActivo, tiempos, faseActual]);
 
-  // Manejar cambios simples de velocidad (reduce o aumenta duraciones)
+  // Manejar cambios  de velocidad 
   const aumentarVelocidad = () => {
     setTiempos(prev => ({
       verde: Math.max(1, prev.verde - 1),
@@ -179,9 +149,9 @@ function App() {
   return (
     <div className="app">
       <div className="speed-control" role="region" aria-label="Control de velocidad">
-        <button className="speed-btn" onClick={aumentarVelocidad}>⏩</button>
+        <button className="speed-btn" onClick={aumentarVelocidad}>+</button>
         <div className="speed-label">Vel: {tiempos.verde}s / {tiempos.amarillo}s</div>
-        <button className="speed-btn" onClick={disminuirVelocidad}>⏪</button>
+        <button className="speed-btn" onClick={disminuirVelocidad}>-</button>
       </div>
 
       <main className="main-content">
