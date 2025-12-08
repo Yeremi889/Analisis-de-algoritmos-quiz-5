@@ -1,4 +1,3 @@
-/* Reset y estilos base */
 * {
   margin: 0;
   padding: 0;
@@ -30,7 +29,6 @@ body {
   flex-direction: column;
 }
 
-/* Speed control (top-left) */
 .speed-control {
   position: fixed;
   top: 16px;
@@ -91,7 +89,6 @@ h1 {
   flex: 1;
 }
 
-/* Contenedor principal con grid */
 .contenedor-principal {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -116,7 +113,6 @@ h2, h3 {
   letter-spacing: 0.5px;
 }
 
-/* Información técnica */
 .info-tecnica {
   background: rgba(17, 34, 64, 0.95);
   padding: 35px;
@@ -166,7 +162,6 @@ h2, h3 {
   line-height: 1.6;
 }
 
-/* Footer */
 .footer {
   text-align: center;
   padding: 30px;
@@ -186,7 +181,6 @@ h2, h3 {
   opacity: 0.75;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .contenedor-principal {
     grid-template-columns: 1fr;
